@@ -1,0 +1,54 @@
+---
+interface Props {
+	title: string;
+	description?: string;
+}
+const { title, description = 'App de estudio sobre Spec-Driven Development y Harness Engineering' } = Astro.props;
+const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
+const nav = [
+	{ href: `${base}`, label: 'Inicio' },
+	{ href: `${base}mapa/`, label: 'Mapa' },
+	{ href: `${base}doc/`, label: 'Doc completo' },
+	{ href: `${base}glosario/`, label: 'Glosario' },
+	{ href: `${base}fuentes/`, label: 'Fuentes' },
+];
+const current = Astro.url.pathname;
+---
+<!doctype html>
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
+		<link rel="icon" href={`${base}favicon.ico`} />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="description" content={description} />
+		<meta name="generator" content={Astro.generator} />
+		<link rel="stylesheet" href={`${base}styles/global.css`} />
+		<title>{title}</title>
+	</head>
+	<body>
+		<header class="site-header">
+			<a class="brand" href={base}>SDD &amp; Harness</a>
+			<nav>
+				{nav.map((item) => (
+					<a
+						href={item.href}
+						aria-current={current === item.href ? 'page' : undefined}
+						class:list={[{ active: current === item.href }]}
+					>
+						{item.label}
+					</a>
+				))}
+			</nav>
+		</header>
+		<main>
+			<slot />
+		</main>
+		<footer class="site-footer">
+			<p>
+				Mapa de estudio SDD + Harness Engineering ·
+				<a href="https://github.com/Mayko2003/sdd-harness-app">GitHub</a>
+			</p>
+		</footer>
+	</body>
+</html>

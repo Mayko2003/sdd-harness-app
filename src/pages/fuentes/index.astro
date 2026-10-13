@@ -1,0 +1,37 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { fuentes, partes } from '../../data/modulos';
+
+const ordenadas = [...fuentes].sort((a, b) => a.titulo.localeCompare(b.titulo));
+---
+
+<BaseLayout title="Fuentes — SDD & Harness">
+	<div class="hero" style="padding-top:1rem">
+		<h1>Biblioteca de fuentes</h1>
+		<p>{fuentes.length} fuentes base del mapa: artículos, papers, repos, docs y podcasts.</p>
+	</div>
+	<table class="data">
+		<thead>
+			<tr>
+				<th>Título</th>
+				<th>Autor</th>
+				<th>Tipo</th>
+				<th>Año</th>
+				<th>Tags</th>
+			</tr>
+		</thead>
+		<tbody>
+			{ordenadas.map((f) => (
+				<tr>
+					<td><a href={f.url} target="_blank" rel="noopener">{f.titulo}</a></td>
+					<td style="color:var(--muted)">{f.autor}</td>
+					<td><span class="tag">{f.tipo}</span></td>
+					<td style="color:var(--muted)">{f.anio}</td>
+					<td>
+						{f.tags.map((t) => <span class="tag" style={`color:var(--c-${t})`}>{partes[t].nombre.split(' ')[0]}&nbsp;</span>)}
+					</td>
+				</tr>
+			))}
+		</tbody>
+	</table>
+</BaseLayout>

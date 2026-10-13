@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import * as doc from '../../content/glosario/terminos.md';
+---
+
+<BaseLayout title="Glosario — SDD & Harness">
+	<article class="doc" set:html={doc.compiledContent()} />
+</BaseLayout>

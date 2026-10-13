@@ -1,0 +1,238 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { modulos, partes, niveles } from '../../data/modulos';
+
+const ordenPartes = ['fundamentos', 'sdd', 'harness', 'integracion'] as const;
+---
+
+<BaseLayout title="Mapa — SDD & Harness">
+	<div class="hero" style="padding-top:1rem">
+		<h1>Mapa de estudio</h1>
+		<p>
+			Clickeá un módulo para ver sus temas y dependencias. Marcá los completados:
+			el progreso queda guardado en tu navegador.
+		</p>
+	</div>
+
+	<div class="map-toolbar">
+		<span class="progress-pill">Progreso: <strong id="progress-label">0/{modulos.length}</strong></span>
+		<button class="btn ghost" id="reset-btn" type="button">Reiniciar progreso</button>
+	</div>
+
+	<div class="map-canvas-wrap" id="map-wrap">
+		<div class="map-canvas" id="map-canvas">
+			<div class="zone zone-sdd" style="left:30px;top:185px;width:430px;height:640px">
+				<span class="zone-label">Spec-Driven Development</span>
+			</div>
+			<div class="zone zone-harness" style="left:640px;top:185px;width:530px;height:640px">
+				<span class="zone-label">Harness Engineering</span>
+			</div>
+			<svg class="edges" id="map-edges" viewBox="0 0 1200 960" preserveAspectRatio="none"></svg>
+			{modulos.map((m) => (
+				<button
+					type="button"
+					class:list={['map-node', `borde-${m.parte}`]}
+					data-id={m.id}
+					style={`left:${m.x}px;top:${m.y}px`}
+					title={m.titulo}
+				>
+					<span class="node-id">{m.id}</span>
+					<span class="node-title">{m.titulo}</span>
+					<span class="node-meta">
+						<span class={`chip chip-${m.nivel}`}>{niveles[m.nivel].nombre}</span>
+						<span class="tag">{m.temas.length} temas</span>
+					</span>
+					<span class="node-check" aria-hidden="true">✓</span>
+				</button>
+			))}
+		</div>
+	</div>
+
+	<div class="legend">
+		<span class="l-fundamentos">Fundamentos</span>
+		<span class="l-sdd">SDD</span>
+		<span class="l-harness">Harness</span>
+		<span class="l-integracion">Integración</span>
+	</div>
+
+	<div class="map-inspector" id="inspector">
+		<h3>Mapa de estudio</h3>
+		<p style="color:var(--muted)">
+			Clickeá un módulo para ver su resumen, temas y dependencias. Las aristas indican
+			prerrequisitos: lo de arriba habilita lo de abajo.
+		</p>
+	</div>
+
+	<div class="map-list">
+		{ordenPartes.map((p) => (
+			<section>
+				<h3 style={`color:var(--c-${p})`}>{partes[p].nombre}</h3>
+				<ol>
+					{modulos.filter((m) => m.parte === p).map((m) => (
+						<li class="item">
+							<a href="#" class="list-link" data-id={m.id}>{m.id} · {m.titulo}</a>
+							<span class={`chip chip-${m.nivel}`} style="margin-left:0.4rem">{niveles[m.nivel].nombre}</span>
+						</li>
+					))}
+				</ol>
+			</section>
+		))}
+	</div>
+
+	<script type="application/json" id="modulos-data" set:html={JSON.stringify(
+		modulos.map((m) => ({
+			id: m.id,
+			titulo: m.titulo,
+			nivel: niveles[m.nivel].nombre,
+			parte: partes[m.parte].nombre,
+			resumen: m.resumen,
+			temas: m.temas,
+			deps: m.deps,
+		}))
+	)}></script>
+
+	<script is:inline>
+		const DATA = JSON.parse(document.getElementById('modulos-data').textContent);
+		const byId = Object.fromEntries(DATA.map((m) => [m.id, m]));
+		const EDGES = [];
+		for (const m of DATA) for (const d of m.deps) EDGES.push([d, m.id]);
+
+		const wrap = document.getElementById('map-wrap');
+		const canvas = document.getElementById('map-canvas');
+		const svg = document.getElementById('map-edges');
+		const inspector = document.getElementById('inspector');
+		const progressLabel = document.getElementById('progress-label');
+		const nodes = Object.fromEntries(
+			[...document.querySelectorAll('.map-node')].map((n) => [n.dataset.id, n])
+		);
+
+		const KEY = 'sdd-harness-done';
+		let done = new Set(JSON.parse(localStorage.getItem(KEY) || '[]'));
+		let selected = null;
+
+		function saveDone() {
+			localStorage.setItem(KEY, JSON.stringify([...done]));
+			updateProgress();
+		}
+		function updateProgress() {
+			progressLabel.textContent = `${done.size}/${DATA.length}`;
+			for (const [id, el] of Object.entries(nodes)) {
+				el.classList.toggle('done', done.has(id));
+			}
+		}
+
+		function fit() {
+			const scale = Math.min(1, wrap.clientWidth / 1200);
+			canvas.style.transform = `scale(${scale})`;
+			wrap.style.height = `${960 * scale}px`;
+		}
+
+		function edgePath(x1, y1, x2, y2) {
+			if (Math.abs(y2 - y1) < 10) {
+				const dir = x2 > x1 ? 1 : -1;
+				return `M ${x1} ${y1} C ${x1 + 110 * dir} ${y1}, ${x2 - 110 * dir} ${y2}, ${x2} ${y2}`;
+			}
+			const dy = Math.abs(y2 - y1) * 0.5;
+			return `M ${x1} ${y1} C ${x1} ${y1 + dy}, ${x2} ${y2 - dy}, ${x2} ${y2}`;
+		}
+
+		function anchor(id, side) {
+			const el = nodes[id];
+			const r = el.getBoundingClientRect();
+			const c = canvas.getBoundingClientRect();
+			const scale = c.width / 1200;
+			const cx = (r.left + r.width / 2 - c.left) / scale;
+			if (side === 'top') return [cx, (r.top - c.top) / scale];
+			if (side === 'bottom') return [cx, (r.bottom - c.top) / scale];
+			if (side === 'left') return [(r.left - c.left) / scale, (r.top + r.height / 2 - c.top) / scale];
+			return [(r.right - c.left) / scale, (r.top + r.height / 2 - c.top) / scale];
+		}
+
+		function neighbors(id) {
+			const s = new Set([id]);
+			for (const [a, b] of EDGES) {
+				if (a === id || b === id) {
+					s.add(a);
+					s.add(b);
+				}
+			}
+			return s;
+		}
+
+		function drawEdges() {
+			const rel = selected ? new Set() : null;
+			if (rel) EDGES.forEach((e, i) => e.includes(selected) && rel.add(i));
+			svg.innerHTML = EDGES.map(([a, b], i) => {
+				const [x1, y1] = anchor(a, 'bottom');
+				const [x2, y2] = anchor(b, 'top');
+				const cls = rel ? (rel.has(i) ? 'edge related' : 'edge dim') : 'edge';
+				return `<path class="${cls}" d="${edgePath(x1, y1, x2, y2)}"/>`;
+			}).join('');
+		}
+
+		function renderInspector() {
+			if (!selected) {
+				inspector.innerHTML = `<h3>Mapa de estudio</h3><p style="color:var(--muted)">Clickeá un módulo para ver su resumen, temas y dependencias. Las aristas indican prerrequisitos.</p>`;
+				return;
+			}
+			const m = byId[selected];
+			const isDone = done.has(m.id);
+			const deps = m.deps.length
+				? `<p style="margin:0.4rem 0"><span class="tag">Requiere: ${m.deps.join(', ')}</span></p>`
+				: '';
+			inspector.innerHTML = `
+				<h3>${m.id} · ${m.titulo}</h3>
+				<div class="insp-meta">
+					<span class="chip chip-${m.nivel === 'Básico' ? 'basico' : m.nivel === 'Intermedio' ? 'intermedio' : 'avanzado'}">${m.nivel}</span>
+					<span class="tag">${m.parte}</span>
+					${isDone ? '<span class="tag">✓ visto</span>' : ''}
+				</div>
+				<p style="color:var(--muted);margin:0.3rem 0">${m.resumen}</p>
+				<ul>${m.temas.map((t) => `<li>${t}</li>`).join('')}</ul>
+				${deps}
+				<div class="insp-actions">
+					<button class="btn" id="toggle-done" type="button">${isDone ? 'Desmarcar' : 'Marcar como visto'}</button>
+				</div>`;
+			document.getElementById('toggle-done').addEventListener('click', () => {
+				isDone ? done.delete(m.id) : done.add(m.id);
+				saveDone();
+				renderInspector();
+			});
+		}
+
+		function select(id) {
+			selected = selected === id ? null : id;
+			const nbs = selected ? neighbors(selected) : null;
+			for (const [nid, el] of Object.entries(nodes)) {
+				el.classList.toggle('selected', nid === selected);
+				el.classList.toggle('dim', !!nbs && !nbs.has(nid));
+			}
+			drawEdges();
+			renderInspector();
+		}
+
+		for (const [id, el] of Object.entries(nodes)) {
+			el.addEventListener('click', () => select(id));
+		}
+		for (const link of document.querySelectorAll('.list-link')) {
+			link.addEventListener('click', (e) => {
+				e.preventDefault();
+				select(link.dataset.id);
+				inspector.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+			});
+		}
+		document.getElementById('reset-btn').addEventListener('click', () => {
+			done.clear();
+			saveDone();
+			renderInspector();
+		});
+
+		new ResizeObserver(() => {
+			fit();
+			drawEdges();
+		}).observe(wrap);
+		fit();
+		drawEdges();
+		updateProgress();
+	</script>
+</BaseLayout>

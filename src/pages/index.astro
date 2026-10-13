@@ -1,17 +1,98 @@
 ---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { modulos, partes, ruta, fuentes, niveles } from '../data/modulos';
+
+const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
+const ordenPartes = ['fundamentos', 'sdd', 'harness', 'integracion'] as const;
+const stats = {
+	modulos: modulos.length,
+	temas: modulos.reduce((acc, m) => acc + m.temas.length, 0),
+	semanas: ruta.length,
+	fuentes: fuentes.length,
+};
 ---
 
-<html lang="es">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}/favicon.svg`} />
-		<link rel="icon" href={`${import.meta.env.BASE_URL}/favicon.ico`} />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>SDD & Harness — App de estudio</title>
-	</head>
-	<body>
-		<h1>SDD & Harness</h1>
-		<p>App de estudio sobre Spec-Driven Development y Harness Engineering. En construcción.</p>
-	</body>
-</html>
+<BaseLayout title="SDD & Harness — App de estudio">
+	<section class="hero">
+		<h1>SDD &amp; Harness Engineering</h1>
+		<p>
+			Un mapa de estudio para dominar el desarrollo con agentes de IA: <strong>Spec-Driven
+			Development</strong> (definir <em>qué</em> construir) y <strong>Harness Engineering</strong>
+			(diseñar el entorno que guía y corrige al agente). Basado en fuentes de OpenAI, Anthropic,
+			Martin Fowler/Thoughtworks, papers y herramientas reales.
+		</p>
+		<div class="hero-actions">
+			<a class="btn" href={`${base}mapa/`}>Abrir el mapa →</a>
+			<a class="btn ghost" href={`${base}doc/`}>Leer el doc completo</a>
+		</div>
+	</section>
+
+	<div class="hero" style="padding-top:0.5rem">
+		<p style="display:flex;gap:1.4rem;flex-wrap:wrap;color:var(--muted);font-size:0.95rem">
+			<span><strong style="color:var(--text)">{stats.modulos}</strong> módulos</span>
+			<span><strong style="color:var(--text)">{stats.temas}</strong> temas clave</span>
+			<span><strong style="color:var(--text)">{stats.semanas}</strong> semanas de ruta</span>
+			<span><strong style="color:var(--text)">{stats.fuentes}</strong> fuentes</span>
+		</p>
+	</div>
+
+	<h2 class="section-title">Las dos disciplinas</h2>
+	<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem">
+		<div class="card" style="border-top:3px solid var(--c-sdd)">
+			<h3 style="margin-top:0">SDD — la spec</h3>
+			<p style="color:var(--muted)">
+				Escribir la especificación <em>antes</em> del código. La spec es la fuente de verdad
+				compartida por humano y agente: del PRD a los Given/When/Then que generan los tests.
+			</p>
+			<p style="font-size:0.85rem;color:var(--muted)">
+				Spec-first → spec-anchored → spec-as-source
+			</p>
+		</div>
+		<div class="card" style="border-top:3px solid var(--c-harness)">
+			<h3 style="margin-top:0">Harness — el entorno</h3>
+			<p style="color:var(--muted)">
+				Todo lo que no es el modelo: guías que orientan <em>antes</em> de actuar y sensores
+				que permiten autocorrección <em>después</em>. El harness convierte inteligencia en trabajo confiable.
+			</p>
+			<p style="font-size:0.85rem;color:var(--muted)">
+				Guías (feedforward) + Sensores (feedback)
+			</p>
+		</div>
+	</div>
+
+	<h2 class="section-title">Estructura del mapa</h2>
+	<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem">
+		{ordenPartes.map((p) => (
+			<div class="card" style={`border-top:3px solid var(--c-${p})`}>
+				<h3 style="margin-top:0;font-size:1rem">{partes[p].nombre}</h3>
+				<ul style="margin:0;padding-left:1.1rem;color:var(--muted);font-size:0.88rem">
+					{modulos.filter((m) => m.parte === p).map((m) => (
+						<li>
+							<a href={`${base}mapa/`} style="color:var(--text)">{m.id} · {m.titulo}</a>
+						</li>
+					))}
+				</ul>
+			</div>
+		))}
+	</div>
+
+	<h2 class="section-title">Ruta sugerida: 8 semanas</h2>
+	<table class="data">
+		<thead>
+			<tr>
+				<th>Semana</th>
+				<th>Módulos</th>
+				<th>Entregable</th>
+			</tr>
+		</thead>
+		<tbody>
+			{ruta.map((s) => (
+				<tr>
+					<td>{s.semana}</td>
+					<td>{s.modulos.join(', ')}</td>
+					<td>{s.entregable}</td>
+				</tr>
+			))}
+		</tbody>
+	</table>
+</BaseLayout>

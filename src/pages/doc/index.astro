@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import * as doc from '../../content/doc/mapa.md';
+---
+
+<BaseLayout title="Doc completo — SDD & Harness">
+	<article class="doc" set:html={doc.compiledContent()} />
+</BaseLayout>
