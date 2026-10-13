@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { modulos, partes, niveles } from '../../data/modulos';
 
 const ordenPartes = ['fundamentos', 'sdd', 'harness', 'integracion'] as const;
+const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
 ---
 
 <BaseLayout title="Mapa — SDD & Harness">
@@ -70,7 +71,7 @@ const ordenPartes = ['fundamentos', 'sdd', 'harness', 'integracion'] as const;
 				<ol>
 					{modulos.filter((m) => m.parte === p).map((m) => (
 						<li class="item">
-							<a href="#" class="list-link" data-id={m.id}>{m.id} · {m.titulo}</a>
+							<a href={`${base}lecciones/${m.id}/`} class="list-link" data-id={m.id}>{m.id} · {m.titulo}</a>
 							<span class={`chip chip-${m.nivel}`} style="margin-left:0.4rem">{niveles[m.nivel].nombre}</span>
 						</li>
 					))}
@@ -79,8 +80,9 @@ const ordenPartes = ['fundamentos', 'sdd', 'harness', 'integracion'] as const;
 		))}
 	</div>
 
-	<script type="application/json" id="modulos-data" set:html={JSON.stringify(
-		modulos.map((m) => ({
+	<script type="application/json" id="modulos-data" set:html={JSON.stringify({
+		base,
+		modulos: modulos.map((m) => ({
 			id: m.id,
 			titulo: m.titulo,
 			nivel: niveles[m.nivel].nombre,
@@ -89,10 +91,10 @@ const ordenPartes = ['fundamentos', 'sdd', 'harness', 'integracion'] as const;
 			temas: m.temas,
 			deps: m.deps,
 		}))
-	)}></script>
+	})}></script>
 
 	<script is:inline>
-		const DATA = JSON.parse(document.getElementById('modulos-data').textContent);
+		const { base: BASE, modulos: DATA } = JSON.parse(document.getElementById('modulos-data').textContent);
 		const byId = Object.fromEntries(DATA.map((m) => [m.id, m]));
 		const EDGES = [];
 		for (const m of DATA) for (const d of m.deps) EDGES.push([d, m.id]);
@@ -192,6 +194,7 @@ const ordenPartes = ['fundamentos', 'sdd', 'harness', 'integracion'] as const;
 				${deps}
 				<div class="insp-actions">
 					<button class="btn" id="toggle-done" type="button">${isDone ? 'Desmarcar' : 'Marcar como visto'}</button>
+					<a class="btn ghost" href="${BASE}lecciones/${m.id}/">Abrir lección →</a>
 				</div>`;
 			document.getElementById('toggle-done').addEventListener('click', () => {
 				isDone ? done.delete(m.id) : done.add(m.id);
@@ -216,6 +219,7 @@ const ordenPartes = ['fundamentos', 'sdd', 'harness', 'integracion'] as const;
 		}
 		for (const link of document.querySelectorAll('.list-link')) {
 			link.addEventListener('click', (e) => {
+				if (e.ctrlKey || e.metaKey || e.shiftKey) return; // abrir la lección en pestaña nueva
 				e.preventDefault();
 				select(link.dataset.id);
 				inspector.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

@@ -1,0 +1,44 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { modulos, partes, niveles } from '../../data/modulos';
+
+export function getStaticPaths() {
+	const lecciones = import.meta.glob('../../content/lecciones/*.md', { eager: true });
+	return Object.values(lecciones).map((lec: any) => {
+		const id = lec.frontmatter.id;
+		const mod = modulos.find((m) => m.id === id);
+		if (!mod) throw new Error(`Lección sin módulo: ${id}`);
+		return { params: { id }, props: { lec, mod } };
+	});
+}
+
+const { lec, mod } = Astro.props;
+const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
+const deps = mod.deps.map((d: string) => modulos.find((m) => m.id === d)).filter(Boolean);
+const idx = modulos.indexOf(mod);
+const prev = idx > 0 ? modulos[idx - 1] : null;
+const next = idx < modulos.length - 1 ? modulos[idx + 1] : null;
+---
+
+<BaseLayout title={`${mod.id} · ${mod.titulo} — SDD & Harness`} description={mod.resumen}>
+	<p><a href={`${base}lecciones/`} style="color:var(--muted)">← Lecciones</a></p>
+	<header class="lesson-header">
+		<div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
+			<span class={`chip chip-${mod.nivel}`}>{niveles[mod.nivel].nombre}</span>
+			<span class="tag">{partes[mod.parte].nombre}</span>
+			<span class="lesson-id">{mod.id}</span>
+		</div>
+		<h1 style="margin:.5rem 0 .3rem">{mod.titulo}</h1>
+		<p style="color:var(--muted);margin:.2rem 0 .8rem">{mod.resumen}</p>
+		{deps.length > 0 && (
+			<p style="font-size:.85rem;color:var(--muted)">
+				Requiere: {deps.map((d: any) => <a href={`${base}lecciones/${d.id}/`}>{d.id}</a>).reduce((a: any, b: any) => [a, ', ', b])}
+			</p>
+		)}
+	</header>
+	<article class="doc" set:html={lec.compiledContent()} />
+	<nav class="lesson-nav">
+		{prev ? <a href={`${base}lecciones/${prev.id}/`}>← {prev.id} · {prev.titulo}</a> : <span />}
+		{next ? <a href={`${base}lecciones/${next.id}/`}>{next.id} · {next.titulo} →</a> : <a href={`${base}mapa/`}>Volver al mapa →</a>}
+	</nav>
+</BaseLayout>

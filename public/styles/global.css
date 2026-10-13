@@ -534,3 +534,42 @@ table.data tr:hover td {
 	font-weight: 600;
 	color: var(--text);
 }
+
+/* --- Lecciones --- */
+.lesson-id {
+	font-family: ui-monospace, monospace;
+	font-size: 0.8rem;
+	font-weight: 700;
+	color: var(--muted);
+}
+.lesson-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 1rem;
+}
+.lesson-card {
+	display: block;
+	text-decoration: none;
+	color: var(--text);
+	transition: border-color 0.15s, transform 0.15s;
+}
+.lesson-card:hover {
+	border-color: var(--muted);
+	transform: translateY(-1px);
+}
+.lesson-header {
+	border-bottom: 1px solid var(--border);
+	margin-bottom: 1.2rem;
+}
+.lesson-nav {
+	display: flex;
+	justify-content: space-between;
+	gap: 1rem;
+	border-top: 1px solid var(--border);
+	margin-top: 2rem;
+	padding-top: 1rem;
+	font-size: 0.9rem;
+}
+.lesson-nav a {
+	color: var(--text);
+}

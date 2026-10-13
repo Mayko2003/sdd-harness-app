@@ -68,7 +68,7 @@ const stats = {
 				<ul style="margin:0;padding-left:1.1rem;color:var(--muted);font-size:0.88rem">
 					{modulos.filter((m) => m.parte === p).map((m) => (
 						<li>
-							<a href={`${base}mapa/`} style="color:var(--text)">{m.id} · {m.titulo}</a>
+							<a href={`${base}lecciones/${m.id}/`} style="color:var(--text)">{m.id} · {m.titulo}</a>
 						</li>
 					))}
 				</ul>
